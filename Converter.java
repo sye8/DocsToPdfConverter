@@ -47,6 +47,14 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
  */
 public class Converter {
 
+	/**
+	 * Converts .docx files to pdf
+	 * 
+	 * @param inPath The input file path
+	 * @param outPath The output file path. If path format is not pdf, will be changed to pdf. Put null to generate pdf file in the same directory with the same name
+	 * @throws Docx4JException
+	 * @throws IOException
+	 */
 	public static void docxToPDF(String inPath, String outPath) throws Docx4JException, IOException{
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(inPath));
 		
