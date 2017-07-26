@@ -3,6 +3,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.poi.hssf.converter.ExcelToHtmlConverter;
 import org.docx4j.Docx4J;
 import org.docx4j.convert.out.FOSettings;
@@ -11,6 +13,8 @@ import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.w3c.dom.Document;
 import org.xhtmlrenderer.pdf.ITextRenderer;
+
+import com.lowagie.text.DocumentException;
 
 
 /*
@@ -89,7 +93,17 @@ public class Converter {
 		wordMLPackage = null;
 	}
 	
-	public static void xlsToPDF(String inPath, String outPath) throws Exception{
+	/**
+	 * Converts xls to pdf. Doesn't support chart conversion (chart will not show up in pdf)
+	 * 
+	 * @param inPath The input file path
+	 * @param outPath The output file path. If path format is not pdf, will be changed to pdf. Put null to generate pdf file in the same directory with the same name
+	 * @throws ParserConfigurationException 
+	 * @throws IOException 
+	 * @throws DocumentException 
+	 * @throws Exception
+	 */
+	public static void xlsToPDF(String inPath, String outPath) throws IOException, ParserConfigurationException, DocumentException{
 		//Convert input file into HTML
 		Document inHTML = ExcelToHtmlConverter.process(new File(inPath));
 		
