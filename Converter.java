@@ -3,11 +3,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.apache.poi.hssf.converter.ExcelToHtmlConverter;
 import org.docx4j.Docx4J;
 import org.docx4j.convert.out.FOSettings;
 import org.docx4j.model.fields.FieldUpdater;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.w3c.dom.Document;
+import org.xhtmlrenderer.pdf.ITextRenderer;
+
 
 /*
  * MIT License
@@ -62,14 +66,8 @@ public class Converter {
 		FieldUpdater updater = new FieldUpdater(wordMLPackage);
 		updater.update(true);
 		
-		//Check if outPath is null
-		if(outPath == null){
-			outPath = inPath.substring(0, inPath.indexOf('.')) + ".pdf";
-		}else if(!outPath.contains(".")){
-			outPath += ".pdf";
-		}else if(!outPath.substring(outPath.indexOf('.')+1).equals("pdf")){ //Check if outPath contains valid file type
-			outPath = outPath.substring(0, outPath.indexOf('.')) + ".pdf";
-		}
+		//Validate outPath
+		outPath = pathValidator(inPath, outPath);
 		
 		//Setup
 		FOSettings foSettings = Docx4J.createFOSettings();
@@ -91,4 +89,45 @@ public class Converter {
 		wordMLPackage = null;
 	}
 	
+	public static void xlsToPDF(String inPath, String outPath) throws Exception{
+		//Convert input file into HTML
+		Document inHTML = ExcelToHtmlConverter.process(new File(inPath));
+		
+		ITextRenderer renderer = new ITextRenderer();
+		renderer.setDocument(inHTML, null);
+		
+		renderer.layout();
+		
+		//Validate outPath
+		outPath = pathValidator(inPath, outPath);
+		
+		OutputStream os = new FileOutputStream(outPath);
+		
+		renderer.createPDF(os);
+		System.out.println("Saved: " + outPath);
+		
+		//Cleanup
+		os.flush();
+		os.close();
+		renderer = null;
+	}
+	
+	/**
+	 * Check if outPath contains ".pdf"
+	 * 
+	 * @param inPath Input file path
+	 * @param outPath Output file path
+	 * @return
+	 */
+	private static String pathValidator(String inPath, String outPath){
+		if(outPath == null){
+			return inPath.substring(0, inPath.indexOf('.')) + ".pdf";
+	 	}else if(!outPath.contains(".")){
+			return outPath += ".pdf";
+		}else if(!outPath.substring(outPath.indexOf('.')+1).equals("pdf")){ //Check if outPath contains valid file type
+			return outPath.substring(0, outPath.indexOf('.')) + ".pdf";
+		}else{
+			return inPath.substring(0, inPath.indexOf('.')) + ".pdf";
+		}
+	}
 }
