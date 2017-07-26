@@ -6,6 +6,8 @@ Converts assorted file formats into PDF using Docx4J
 
 For docx conversion, [docx4j-export-FO](https://github.com/plutext/docx4j-export-FO) is needed
 
+Note for xls to pdf conversion, any charts included in the spreadsheet will not showup in pdf (So far not supported). Suggestions are welcomed
+
 ## Dependencies 
 
 - Docx4J 3.3.5
