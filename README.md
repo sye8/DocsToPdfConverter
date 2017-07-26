@@ -32,6 +32,8 @@ For docx conversion, [docx4j-export-FO](https://github.com/plutext/docx4j-export
 
 - Apache XML Graphics Commons 2.2
 
+- [FlyingSaucer API](https://code.google.com/archive/p/flying-saucer/)
+
 - Google Guava 19.0
 
 - JAXB-XSL-FO 1.0.1
