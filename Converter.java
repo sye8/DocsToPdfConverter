@@ -1,4 +1,6 @@
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -6,6 +8,7 @@ import java.io.OutputStream;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.poi.hssf.converter.ExcelToHtmlConverter;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.docx4j.Docx4J;
 import org.docx4j.convert.out.FOSettings;
 import org.docx4j.model.fields.FieldUpdater;
@@ -124,6 +127,36 @@ public class Converter {
 		os.flush();
 		os.close();
 		renderer = null;
+	}
+	
+	public static void xlsxToPDF(String inPath, String outPath) throws IOException, DocumentException, ParserConfigurationException{
+		//Convert input file into HTML
+		Document inHTML = xlsxToHTML(new File(inPath));
+		
+		ITextRenderer renderer = new ITextRenderer();
+		renderer.setDocument(inHTML, null);
+		
+		renderer.layout();
+		
+		//Validate outPath
+		outPath = pathValidator(inPath, outPath);
+		
+		OutputStream os = new FileOutputStream(outPath);
+		
+		renderer.createPDF(os);
+		System.out.println("Saved: " + outPath);
+		
+		//Cleanup
+		os.flush();
+		os.close();
+		renderer = null;
+	}
+	
+	private static Document xlsxToHTML(File in) throws FileNotFoundException, IOException, ParserConfigurationException{
+		
+		XSSFWorkbook workbook = new XSSFWorkbook(new FileInputStream(in));
+		return XLSXToHTMLConverter.convert(workbook);
+		
 	}
 	
 	/**
