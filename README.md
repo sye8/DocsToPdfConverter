@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT%20License-blue.svg)](LICENSE)
 
-Converts docx, xls, xlsx into PDF using Docx4J
+Converts docx, xls, xlsx, html into PDF
 
 For docx conversion, [docx4j-export-FO](https://github.com/plutext/docx4j-export-FO) is needed
 
