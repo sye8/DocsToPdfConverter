@@ -1,10 +1,11 @@
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.poi.hssf.converter.ExcelToHtmlConverter;
@@ -16,6 +17,7 @@ import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.w3c.dom.Document;
 import org.xhtmlrenderer.pdf.ITextRenderer;
+import org.xml.sax.SAXException;
 
 import com.lowagie.text.DocumentException;
 
@@ -110,36 +112,84 @@ public class Converter {
 		//Convert input file into HTML
 		Document inHTML = ExcelToHtmlConverter.process(new File(inPath));
 		
-		ITextRenderer renderer = new ITextRenderer();
-		renderer.setDocument(inHTML, null);
-		
-		renderer.layout();
-		
 		//Validate outPath
 		outPath = pathValidator(inPath, outPath);
 		
-		OutputStream os = new FileOutputStream(outPath);
-		
-		renderer.createPDF(os);
-		System.out.println("Saved: " + outPath);
-		
-		//Cleanup
-		os.flush();
-		os.close();
-		renderer = null;
+		//Convert to PDF
+		htmlToPDF(inHTML, outPath);
 	}
 	
+	/**
+	 * Converts xlsx to pdf. Chart and color formatting conversion not supported
+	 * 
+	 * @param inPath The input file path
+	 * @param outPath The output file path. If path format is not pdf, will be changed to pdf. Put null to generate pdf file in the same directory with the same name
+	 * @throws IOException
+	 * @throws DocumentException
+	 * @throws ParserConfigurationException
+	 */
 	public static void xlsxToPDF(String inPath, String outPath) throws IOException, DocumentException, ParserConfigurationException{
 		//Convert input file into HTML
-		Document inHTML = xlsxToHTML(new File(inPath));
+		Document inHTML = XLSXToHTMLConverter.convert(new XSSFWorkbook(new FileInputStream(new File(inPath))));
+	
+		//Validate outPath
+		outPath = pathValidator(inPath, outPath);
 		
-		ITextRenderer renderer = new ITextRenderer();
-		renderer.setDocument(inHTML, null);
-		
-		renderer.layout();
+		//Convert to PDF
+		htmlToPDF(inHTML, outPath);
+	}
+	
+	/**
+	 * Converts HTML file to PDF
+	 * 
+	 * @param inPath The input file path
+	 * @param outPath The output file path. If path format is not pdf, will be changed to pdf. Put null to generate pdf file in the same directory with the same name
+	 * @throws IOException 
+	 * @throws SAXException 
+	 * @throws ParserConfigurationException 
+	 * @throws DocumentException 
+	 */
+	public static void htmlToPDF(String inPath, String outPath) throws ParserConfigurationException, SAXException, IOException, DocumentException{
+		Document inHTML = loadFromFile(inPath);
 		
 		//Validate outPath
 		outPath = pathValidator(inPath, outPath);
+		
+		//Convert to PDF
+		htmlToPDF(inHTML, outPath);
+	}
+	
+	/**
+	 * Private method to load a w3c dom document from an input path
+	 * 
+	 * @param inPath Input file path
+	 * @throws ParserConfigurationException 
+	 * @throws IOException 
+	 * @throws SAXException 
+	 */
+	private static Document loadFromFile(String inPath) throws ParserConfigurationException, SAXException, IOException{
+		DocumentBuilderFactory factory = null;
+		DocumentBuilder builder = null;
+		
+		factory = DocumentBuilderFactory.newInstance();
+	    builder = factory.newDocumentBuilder();
+	    
+	    return builder.parse(new File(inPath));
+	}
+	
+	/**
+	 * Private method to convert HTML in w3c dom document to PDF
+	 * 
+	 * @param in Input document
+	 * @param outPath Output path
+	 * @throws DocumentException
+	 * @throws IOException
+	 */
+	private static void htmlToPDF(Document in, String outPath) throws DocumentException, IOException{	
+		ITextRenderer renderer = new ITextRenderer();
+		renderer.setDocument(in, null);
+		
+		renderer.layout();
 		
 		OutputStream os = new FileOutputStream(outPath);
 		
@@ -149,14 +199,7 @@ public class Converter {
 		//Cleanup
 		os.flush();
 		os.close();
-		renderer = null;
-	}
-	
-	private static Document xlsxToHTML(File in) throws FileNotFoundException, IOException, ParserConfigurationException{
-		
-		XSSFWorkbook workbook = new XSSFWorkbook(new FileInputStream(in));
-		return XLSXToHTMLConverter.convert(workbook);
-		
+		renderer = null;		
 	}
 	
 	/**
