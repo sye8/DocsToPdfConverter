@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT%20License-blue.svg)](LICENSE)
 
-Converts assorted file formats into PDF using Docx4J
+Converts docx, xls, xlsx into PDF using Docx4J
 
 For docx conversion, [docx4j-export-FO](https://github.com/plutext/docx4j-export-FO) is needed
 
@@ -12,7 +12,7 @@ Note for xls and xlsx to pdf conversion, any charts included in the spreadsheet 
 
 Note: The version numbers listed are the newest ones when I am making the project
 
-- Docx4J 3.3.5
+- [Docx4J 3.3.5](https://www.docx4java.org)
 
 - ANTLR 2.2.7 and ANTLR Runtime 3.5.2
 
@@ -34,9 +34,9 @@ Note: The version numbers listed are the newest ones when I am making the projec
 
 - Apache Fontbox 2.0.4
 
-- Apache POI 3.16
+- [Apache POI 3.16](https://poi.apache.org)
 
-- Apache XMLBeans 2.6.0
+- [Apache XMLBeans 2.6.0](https://mvnrepository.com/artifact/org.apache.xmlbeans/xmlbeans/2.6.0)
 
 - Apache Xerces XML Serializer 2.7.2
 
@@ -44,7 +44,7 @@ Note: The version numbers listed are the newest ones when I am making the projec
 
 - [FlyingSaucer API](https://code.google.com/archive/p/flying-saucer/)
 
-- Google Guava 19.0
+- [Google Guava 19.0](https://github.com/google/guava)
 
 - JAXB-XSL-FO 1.0.1
 
