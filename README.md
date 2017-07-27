@@ -1,4 +1,4 @@
-# PdfConverter
+# DocsToPdfConverter
 
 [![License](https://img.shields.io/badge/license-MIT%20License-blue.svg)](LICENSE)
 
@@ -6,9 +6,11 @@ Converts assorted file formats into PDF using Docx4J
 
 For docx conversion, [docx4j-export-FO](https://github.com/plutext/docx4j-export-FO) is needed
 
-Note for xls to pdf conversion, any charts included in the spreadsheet will not showup in pdf (So far not supported). Suggestions are welcomed
+Note for xls and xlsx to pdf conversion, any charts included in the spreadsheet will not showup in pdf (So far not supported). Suggestions are welcomed
 
 ## Dependencies 
+
+Note: The version numbers listed are the newest ones when I am making the project
 
 - Docx4J 3.3.5
 
@@ -20,6 +22,8 @@ Note for xls to pdf conversion, any charts included in the spreadsheet will not 
 
 - Apache Commons Codec 1.10
 
+- Apache Commons Collections4 4.1
+
 - Apache Commons Fop 2.2
 
 - Apache Commons IO 2.4
@@ -29,6 +33,10 @@ Note for xls to pdf conversion, any charts included in the spreadsheet will not 
 - Apache Commons Logging 1.2
 
 - Apache Fontbox 2.0.4
+
+- Apache POI 3.16
+
+- Apache XMLBeans 2.6.0
 
 - Apache Xerces XML Serializer 2.7.2
 
