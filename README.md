@@ -4,6 +4,8 @@
 
 Converts docx, xls, xlsx, pptx into PDF
 
+**Since conversion doesn't maintain original formatting well, this project is no longer maintained**
+
 For docx conversion, [docx4j-export-FO](https://github.com/plutext/docx4j-export-FO) is needed
 
 Note for xls and xlsx to pdf conversion, any charts included in the spreadsheet will not showup in pdf (So far not supported). Suggestions are welcomed
