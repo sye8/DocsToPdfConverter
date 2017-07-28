@@ -1,27 +1,45 @@
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Iterator;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.poi.hssf.converter.ExcelToHtmlConverter;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.docx4j.Docx4J;
 import org.docx4j.convert.out.FOSettings;
+import org.docx4j.fonts.IdentityPlusMapper;
+import org.docx4j.fonts.Mapper;
+import org.docx4j.fonts.PhysicalFont;
+import org.docx4j.fonts.PhysicalFonts;
 import org.docx4j.model.fields.FieldUpdater;
-import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.w3c.dom.Document;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 import org.xml.sax.SAXException;
 
 import com.lowagie.text.DocumentException;
+import com.lowagie.text.Image;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 
 /*
  * MIT License
@@ -71,12 +89,22 @@ public class Converter {
 	 *            The output file path. If path format is not pdf, will be
 	 *            changed to pdf. Put null to generate pdf file in the same
 	 *            directory with the same name
-	 * @throws Docx4JException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public static void docxToPDF(String inPath, String outPath) throws Docx4JException, IOException {
+	public static void docxToPDF(String inPath, String outPath) throws Exception {
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(inPath));
-
+		
+		//TODO: Support Chinese font
+		//Set up font mapper
+	    Mapper fontMapper = new IdentityPlusMapper();
+	    wordMLPackage.setFontMapper(fontMapper);
+	    PhysicalFont font = PhysicalFonts.get("Songti"); 
+	    System.out.println(font);
+	    if (font!=null) {
+	        fontMapper.put("Times New Roman", font);
+	        fontMapper.put("Arial", font);
+	    }
+	   
 		// Refresh the values of DOCPROPERTY fields
 		FieldUpdater updater = new FieldUpdater(wordMLPackage);
 		updater.update(true);
@@ -158,23 +186,77 @@ public class Converter {
 		htmlToPDF(inHTML, outPath);
 	}
 
-	//TODO: Convert the whole slideshow
-	public static void pptToPDF(String inPath, String outPath) throws Exception {
+	/**
+	 * Converts pptx to PDF file 
+	 * 
+	 * @param inPath The input file path
+	 * @param outPath
+	 * 			  The output file path. If path format is not pdf, will be
+	 *            changed to pdf. Put null to generate pdf file in the same
+	 *            directory with the same name
+	 * @throws Exception
+	 */
+	public static void pptxToPDF(String inPath, String outPath) throws Exception {
+        
 		//Load file
 		FileInputStream fis = new FileInputStream(new File(inPath));
 		XMLSlideShow inPPT = new XMLSlideShow(fis);
+		byte[] byteImgData;
 		fis.close();
-		
-		//Dimesions
-		Dimension pgsize = inPPT.getPageSize();
-		int width = (int)pgsize.getWidth();
-		int height = (int)pgsize.getHeight();
 		
 		// Validate outPath
 		outPath = pathValidator(inPath, outPath);
 		
+		//Dimesions
+		Dimension pgsize = inPPT.getPageSize();
+		int width = (int)pgsize.width;
+		int height = (int)pgsize.height;
 		
+		//Setup document
+		com.lowagie.text.Document document = new com.lowagie.text.Document();
+		PdfWriter.getInstance(document, new FileOutputStream(outPath));
+		PdfPTable table = new PdfPTable(1);	
 		
+		//Convert each slide into image
+		int i = 0;
+		for(XSLFSlide slide : inPPT.getSlides()){
+
+		    
+			BufferedImage slideImg = new BufferedImage(pgsize.width, pgsize.height, BufferedImage.TYPE_INT_RGB);
+			
+			//G2D setup
+			Graphics2D g2d = slideImg.createGraphics();
+			g2d.setPaint(Color.white);
+			g2d.fill(new Rectangle2D.Float(0, 0, pgsize.width, pgsize.height));
+			g2d.clearRect(0, 0, width, height);
+			
+			slide.draw(g2d);
+			
+			//Save image into byte array
+			System.out.println("Drawing slide: " + (i+1));
+			ByteArrayOutputStream slideDrawn = new ByteArrayOutputStream();
+			ImageOutputStream outputStream = ImageIO.createImageOutputStream(slideDrawn);
+			Iterator<ImageWriter> iterator = ImageIO.getImageWritersByFormatName("png");
+			if(!iterator.hasNext()){
+				throw new IllegalStateException("Writers Not Found");
+			}
+			ImageWriter imageWriter = iterator.next();
+			imageWriter.setOutput(outputStream);
+			imageWriter.write(slideImg);
+			byteImgData = slideDrawn.toByteArray();
+			
+			//Printing to PDF
+			System.out.println("Printing slide: " + (i+1));			
+			Image img = Image.getInstance(byteImgData);
+			document.setPageSize(new Rectangle(img.getWidth(), img.getHeight()));
+			document.open();
+			img.setAbsolutePosition(0, 0);
+			table.addCell(new PdfPCell(img, true));
+			i++;
+		}
+		document.add(table);
+		inPPT.close();
+	    document.close();
 	}
 
 	/**
