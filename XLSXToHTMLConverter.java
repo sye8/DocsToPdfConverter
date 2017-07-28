@@ -72,11 +72,12 @@ limitations under the License.
 ==================================================================== */
 
 /**
- * XLSX to HTML Converter
- * Original XLS to HTML converter written by @author Sergey Vladimirov (vlsergey {at} gmail {dot} com). Rewritten for XLSX to HTML conversion
+ * XLSX to HTML Converter Original XLS to HTML converter written by @author
+ * Sergey Vladimirov (vlsergey {at} gmail {dot} com). Rewritten for XLSX to HTML
+ * conversion
  * 
- * Only offers basic functionality
- * Color formatting is not preserved (due to method changes from HSSF to XSSF)
+ * Only offers basic functionality Color formatting is not preserved (due to
+ * method changes from HSSF to XSSF)
  * 
  * Wrapping content into two additional DIVs not included
  * 
@@ -90,37 +91,37 @@ limitations under the License.
  *
  */
 @Beta
-public class XLSXToHTMLConverter{
+public class XLSXToHTMLConverter {
 
 	private final HtmlDocumentFacade htmlDocFacade;
-	
-    private String cssClassPrefixCell = "c";
-    private String cssClassPrefixRow = "r";
-    private String cssClassPrefixTable = "t";
-    
-    private boolean outputColumnHeaders = true;
-    private boolean outputHiddenColumns = false;
-    private boolean outputHiddenRows = false;
-    private boolean outputLeadingSpacesAsNonBreaking = true;
-    private boolean outputRowNumbers = true;
-    
-    private Map<Short, String> excelStyleToClass = new LinkedHashMap<Short, String>();
-    
-    private static final short EXCEL_COLUMN_WIDTH_FACTOR = 256;
-    private static final int UNIT_OFFSET_LENGTH = 7;
-    
-    //TODO: No XSSFDataFormatter found, test with HSSFDataFormatter
-    protected final HSSFDataFormatter hssfDataFormatter = new HSSFDataFormatter();
-	
-    public XLSXToHTMLConverter(Document doc){
-    	htmlDocFacade = new HtmlDocumentFacade(doc);
-    }
-    
-    public XLSXToHTMLConverter(HtmlDocumentFacade htmlDocFacade){
-    	this.htmlDocFacade = htmlDocFacade;
-    }
-    
-    public boolean isOutputColumnHeaders() {
+
+	private String cssClassPrefixCell = "c";
+	private String cssClassPrefixRow = "r";
+	private String cssClassPrefixTable = "t";
+
+	private boolean outputColumnHeaders = true;
+	private boolean outputHiddenColumns = false;
+	private boolean outputHiddenRows = false;
+	private boolean outputLeadingSpacesAsNonBreaking = true;
+	private boolean outputRowNumbers = true;
+
+	private Map<Short, String> excelStyleToClass = new LinkedHashMap<Short, String>();
+
+	private static final short EXCEL_COLUMN_WIDTH_FACTOR = 256;
+	private static final int UNIT_OFFSET_LENGTH = 7;
+
+	//No XSSFDataFormatter found, use HSSFDataFormatter
+	protected final HSSFDataFormatter hssfDataFormatter = new HSSFDataFormatter();
+
+	public XLSXToHTMLConverter(Document doc) {
+		htmlDocFacade = new HtmlDocumentFacade(doc);
+	}
+
+	public XLSXToHTMLConverter(HtmlDocumentFacade htmlDocFacade) {
+		this.htmlDocFacade = htmlDocFacade;
+	}
+
+	public boolean isOutputColumnHeaders() {
 		return outputColumnHeaders;
 	}
 
@@ -160,516 +161,526 @@ public class XLSXToHTMLConverter{
 		this.outputRowNumbers = outputRowNumbers;
 	}
 
-    public Document getDocument(){
-        return htmlDocFacade.getDocument();
-    }
-    
-    protected String getStyleClassName(XSSFWorkbook workbook, XSSFCellStyle cellStyle){
-        final Short cellStyleKey = Short.valueOf(cellStyle.getIndex());
-        String knownClass = excelStyleToClass.get(cellStyleKey);
-        
-        if (knownClass != null){
-        	return knownClass;
-        }
-        String cssStyle = buildStyle(workbook, cellStyle);
-        String cssClass = htmlDocFacade.getOrCreateCssClass(cssClassPrefixCell, cssStyle);
-        excelStyleToClass.put(cellStyleKey, cssClass);
-        
-        return cssClass;
-    }
-    
-    public static String getAlign(HorizontalAlignment alignment){
-        switch(alignment){
-	        case CENTER:
-	            return "center";
-	        case CENTER_SELECTION:
-	            return "center";
-	        case FILL:
-	            // XXX: shall we support fill?
-	            return "";
-	        case GENERAL:
-	            return "";
-	        case JUSTIFY:
-	            return "justify";
-	        case LEFT:
-	            return "left";
-	        case RIGHT:
-	            return "right";
-	        default:
-	            return "";
-        }
-    }
+	public Document getDocument() {
+		return htmlDocFacade.getDocument();
+	}
 
-    public static String getBorderStyle(BorderStyle xlsBorder){
-        final String borderStyle;
-        switch(xlsBorder){
-	        case NONE:
-	            borderStyle = "none";
-	            break;
-	        case DASH_DOT:
-	        case DASH_DOT_DOT:
-	        case DOTTED:
-	        case HAIR:
-	        case MEDIUM_DASH_DOT:
-	        case MEDIUM_DASH_DOT_DOT:
-	        case SLANTED_DASH_DOT:
-	            borderStyle = "dotted";
-	            break;
-	        case DASHED:
-	        case MEDIUM_DASHED:
-	            borderStyle = "dashed";
-	            break;
-	        case DOUBLE:
-	            borderStyle = "double";
-	            break;
-	        default:
-	            borderStyle = "solid";
-	            break;
-	        }
-        return borderStyle;
-    }
+	protected String getStyleClassName(XSSFWorkbook workbook, XSSFCellStyle cellStyle) {
+		final Short cellStyleKey = Short.valueOf(cellStyle.getIndex());
+		String knownClass = excelStyleToClass.get(cellStyleKey);
 
-    public static String getBorderWidth(BorderStyle xlsBorder){
-        final String borderWidth;
-        switch(xlsBorder){
-	        case MEDIUM_DASH_DOT:
-	        case MEDIUM_DASH_DOT_DOT:
-	        case MEDIUM_DASHED:
-	            borderWidth = "2pt";
-	            break;
-	        case THICK:
-	            borderWidth = "thick";
-	            break;
-	        default:
-	            borderWidth = "thin";
-	            break;
-	        }
-        return borderWidth;
-    }
+		if (knownClass != null) {
+			return knownClass;
+		}
+		String cssStyle = buildStyle(workbook, cellStyle);
+		String cssClass = htmlDocFacade.getOrCreateCssClass(cssClassPrefixCell, cssStyle);
+		excelStyleToClass.put(cellStyleKey, cssClass);
 
-    /**
-     * See <a href="http://apache-poi.1045710.n5.nabble.com/Excel-Column-Width-Unit-Converter-pixels-excel-column-width-units-td2301481.html">here</a> for Xio explanation and details
-     */
-    public static int getColumnWidthInPx(int widthUnits){
-        int pixels = (widthUnits/EXCEL_COLUMN_WIDTH_FACTOR)*UNIT_OFFSET_LENGTH;
-        int offsetWidthUnits = widthUnits % EXCEL_COLUMN_WIDTH_FACTOR;
-        pixels += Math.round(offsetWidthUnits / ((float)EXCEL_COLUMN_WIDTH_FACTOR / UNIT_OFFSET_LENGTH));
+		return cssClass;
+	}
 
-        return pixels;
-    }
+	public static String getAlign(HorizontalAlignment alignment) {
+		switch (alignment) {
+			case CENTER:
+				return "center";
+			case CENTER_SELECTION:
+				return "center";
+			case FILL:
+				// XXX: shall we support fill?
+				return "";
+			case GENERAL:
+				return "";
+			case JUSTIFY:
+				return "justify";
+			case LEFT:
+				return "left";
+			case RIGHT:
+				return "right";
+			default:
+				return "";
+			}
+	}
 
-    protected String buildStyle(XSSFWorkbook workbook, XSSFCellStyle cellStyle){
-        StringBuilder style = new StringBuilder();
+	public static String getBorderStyle(BorderStyle xlsBorder) {
+		final String borderStyle;
+		switch (xlsBorder) {
+			case NONE:
+				borderStyle = "none";
+				break;
+			case DASH_DOT:
+			case DASH_DOT_DOT:
+			case DOTTED:
+			case HAIR:
+			case MEDIUM_DASH_DOT:
+			case MEDIUM_DASH_DOT_DOT:
+			case SLANTED_DASH_DOT:
+				borderStyle = "dotted";
+				break;
+			case DASHED:
+			case MEDIUM_DASHED:
+				borderStyle = "dashed";
+				break;
+			case DOUBLE:
+				borderStyle = "double";
+				break;
+			default:
+				borderStyle = "solid";
+				break;
+		}
+		return borderStyle;
+	}
 
-        style.append("white-space:pre-wrap;");
-        appendAlign(style, cellStyle.getAlignmentEnum().getCode());
-        buildStyle_border(workbook, style, "top", cellStyle.getBorderTopEnum(), cellStyle.getTopBorderColor());
-        buildStyle_border(workbook, style, "right", cellStyle.getBorderRightEnum(), cellStyle.getRightBorderColor());
-        buildStyle_border(workbook, style, "bottom", cellStyle.getBorderBottomEnum(), cellStyle.getBottomBorderColor());
-        buildStyle_border( workbook, style, "left", cellStyle.getBorderLeftEnum(),cellStyle.getLeftBorderColor());
+	public static String getBorderWidth(BorderStyle xlsBorder) {
+		final String borderWidth;
+		switch (xlsBorder) {
+			case MEDIUM_DASH_DOT:
+			case MEDIUM_DASH_DOT_DOT:
+			case MEDIUM_DASHED:
+				borderWidth = "2pt";
+				break;
+			case THICK:
+				borderWidth = "thick";
+				break;
+			default:
+				borderWidth = "thin";
+				break;
+		}
+		return borderWidth;
+	}
 
-        XSSFFont font = cellStyle.getFont();
-        buildStyle_font(workbook, style, font);
+	/**
+	 * See <a href=
+	 * "http://apache-poi.1045710.n5.nabble.com/Excel-Column-Width-Unit-Converter-pixels-excel-column-width-units-td2301481.html">here</a>
+	 * for Xio explanation and details
+	 */
+	public static int getColumnWidthInPx(int widthUnits) {
+		int pixels = (widthUnits / EXCEL_COLUMN_WIDTH_FACTOR) * UNIT_OFFSET_LENGTH;
+		int offsetWidthUnits = widthUnits % EXCEL_COLUMN_WIDTH_FACTOR;
+		pixels += Math.round(offsetWidthUnits / ((float) EXCEL_COLUMN_WIDTH_FACTOR / UNIT_OFFSET_LENGTH));
 
-        return style.toString();
-    }
+		return pixels;
+	}
 
-    private void buildStyle_border(XSSFWorkbook workbook, StringBuilder style,String type, BorderStyle xlsBorder, short borderColor){
-        if(xlsBorder == BorderStyle.NONE){
-            return;
-        }
+	protected String buildStyle(XSSFWorkbook workbook, XSSFCellStyle cellStyle) {
+		StringBuilder style = new StringBuilder();
 
-        StringBuilder borderStyle = new StringBuilder();
-        borderStyle.append(getBorderWidth(xlsBorder));
-        borderStyle.append(' ');
-        borderStyle.append(getBorderStyle(xlsBorder));
+		style.append("white-space:pre-wrap;");
+		appendAlign(style, cellStyle.getAlignmentEnum().getCode());
+		buildStyle_border(workbook, style, "top", cellStyle.getBorderTopEnum(), cellStyle.getTopBorderColor());
+		buildStyle_border(workbook, style, "right", cellStyle.getBorderRightEnum(), cellStyle.getRightBorderColor());
+		buildStyle_border(workbook, style, "bottom", cellStyle.getBorderBottomEnum(), cellStyle.getBottomBorderColor());
+		buildStyle_border(workbook, style, "left", cellStyle.getBorderLeftEnum(), cellStyle.getLeftBorderColor());
 
-        style.append( "border-" + type + ":" + borderStyle + ";" );
-    }
+		XSSFFont font = cellStyle.getFont();
+		buildStyle_font(workbook, style, font);
 
-    private void buildStyle_font(XSSFWorkbook workbook, StringBuilder style, XSSFFont font){
-        if(font.getBold()){
-            style.append( "font-weight:bold;" );
-        }
-        if(font.getFontHeightInPoints() != 0){
-        	style.append("font-size:" + font.getFontHeightInPoints() + "pt;");
-        }
-        if (font.getItalic()){
-            style.append("font-style:italic;");
-        }
-    }
-    
-    private static void appendAlign(StringBuilder style, short alignment){
-        String cssAlign = getAlign(HorizontalAlignment.forInt(alignment));
-        if(isEmpty(cssAlign)){
-        	return;
-        }
-        style.append("text-align:");
-        style.append(cssAlign);
-        style.append(";");
-    }
-	
-    /**
-     * Converts Excel file (97-2007) into HTML file.
-     * 
-     * @param workbook workbook instance to process
-     * @return DOM representation of result HTML
-     * @throws IOException 
-     * @throws ParserConfigurationException 
-     */
-    public static Document convert(XSSFWorkbook workbook) throws IOException, ParserConfigurationException{
-    	XLSXToHTMLConverter xlsxToHTMLConverter = new XLSXToHTMLConverter(XMLHelper.getDocumentBuilderFactory().newDocumentBuilder().newDocument());
-    	xlsxToHTMLConverter.processWorkbook(workbook);
-        Document doc = xlsxToHTMLConverter.getDocument();
-        return doc;
-    }
-	
-	protected void processWorkbook(XSSFWorkbook workbook){
-	   for(int s = 0; s < workbook.getNumberOfSheets(); s++){
-           XSSFSheet sheet = workbook.getSheetAt(s);
-           processSheet(sheet);
-	   }
-	   htmlDocFacade.updateStylesheet();
-    }
-    
-	protected void processSheet(XSSFSheet sheet){
-    	processSheetHeader(htmlDocFacade.getBody(), sheet);
-    	final int physicalNumOfRows = sheet.getPhysicalNumberOfRows();
-    	if (physicalNumOfRows <= 0){
-    		return;
-    	}
-    	Element table = htmlDocFacade.createTable();
-        htmlDocFacade.addStyleClass(table, cssClassPrefixTable,"border-collapse:collapse;border-spacing:0;");
-        Element tableBody = htmlDocFacade.createTableBody();
-        final CellRangeAddress[][] mergedRanges = buildMergedRangesMap(sheet);
-        final List<Element> emptyRowElements = new ArrayList<Element>(physicalNumOfRows);
-        
-        int maxSheetColumns = 1;
-        for (int r = sheet.getFirstRowNum(); r <= sheet.getLastRowNum(); r++){
-            XSSFRow row = sheet.getRow(r);
-            if (row == null){
-            	continue;
-            }
-            if (!isOutputHiddenRows() && row.getZeroHeight()){
-            	continue;
-            }
-                
-            Element tableRowElement = htmlDocFacade.createTableRow();
-            htmlDocFacade.addStyleClass(tableRowElement, cssClassPrefixRow, "height:" + (row.getHeight()/20f) + "pt;");
+		return style.toString();
+	}
 
-            int maxRowColumnNumber = processRow(mergedRanges, row, tableRowElement);
+	private void buildStyle_border(XSSFWorkbook workbook, StringBuilder style, String type, BorderStyle xlsBorder,
+			short borderColor) {
+		if (xlsBorder == BorderStyle.NONE) {
+			return;
+		}
 
-            if (maxRowColumnNumber == 0){
-                emptyRowElements.add(tableRowElement);
-            }else{
-                if (!emptyRowElements.isEmpty()){
-                    for (Element emptyRowElement : emptyRowElements){
-                        tableBody.appendChild(emptyRowElement);
-                    }
-                    emptyRowElements.clear();
-                }
-                tableBody.appendChild(tableRowElement);
-            }
-            maxSheetColumns = Math.max(maxSheetColumns, maxRowColumnNumber);
-        }
+		StringBuilder borderStyle = new StringBuilder();
+		borderStyle.append(getBorderWidth(xlsBorder));
+		borderStyle.append(' ');
+		borderStyle.append(getBorderStyle(xlsBorder));
 
-        processColumnWidths(sheet, maxSheetColumns, table);
-        if(isOutputColumnHeaders()){
-            processColumnHeaders(sheet, maxSheetColumns, table);
-        }
+		style.append("border-" + type + ":" + borderStyle + ";");
+	}
 
-        table.appendChild(tableBody);
+	private void buildStyle_font(XSSFWorkbook workbook, StringBuilder style, XSSFFont font) {
+		if (font.getBold()) {
+			style.append("font-weight:bold;");
+		}
+		if (font.getFontHeightInPoints() != 0) {
+			style.append("font-size:" + font.getFontHeightInPoints() + "pt;");
+		}
+		if (font.getItalic()) {
+			style.append("font-style:italic;");
+		}
+	}
 
-        htmlDocFacade.getBody().appendChild(table);  
-    }
-    
+	private static void appendAlign(StringBuilder style, short alignment) {
+		String cssAlign = getAlign(HorizontalAlignment.forInt(alignment));
+		if (isEmpty(cssAlign)) {
+			return;
+		}
+		style.append("text-align:");
+		style.append(cssAlign);
+		style.append(";");
+	}
 
-    
-    /**
-     * @return maximum 1-base index of column that were rendered, zero if none
-     */
-    protected int processRow(CellRangeAddress[][] mergedRanges, XSSFRow row, Element tableRowElement){
-        final XSSFSheet sheet = row.getSheet();
-        final short maxColIx = row.getLastCellNum();
-        if(maxColIx <= 0){
-        	return 0;
-        }
-            
-        final List<Element> emptyCells = new ArrayList<Element>(maxColIx );
+	/**
+	 * Converts Excel file (97-2007) into HTML file.
+	 * 
+	 * @param workbook
+	 *            workbook instance to process
+	 * @param keepColumnHeaders If user wish to keep column headers on output
+	 * @param keepRowNumbers If user wish to keep row numbers on output
+	 * @return DOM representation of result HTML
+	 * @throws IOException
+	 * @throws ParserConfigurationException
+	 */
+	public static Document convert(XSSFWorkbook workbook, boolean keepColumnHeaders, boolean keepRowNumbers) throws IOException, ParserConfigurationException {
+		XLSXToHTMLConverter xlsxToHTMLConverter = new XLSXToHTMLConverter(
+				XMLHelper.getDocumentBuilderFactory().newDocumentBuilder().newDocument());
+		xlsxToHTMLConverter.setOutputColumnHeaders(keepColumnHeaders);
+		xlsxToHTMLConverter.setOutputRowNumbers(keepRowNumbers);
+		xlsxToHTMLConverter.processWorkbook(workbook);
+		Document doc = xlsxToHTMLConverter.getDocument();
+		return doc;
+	}
 
-        if (isOutputRowNumbers()){
-            Element tableRowNumberCellElement = htmlDocFacade.createTableHeaderCell();
-            processRowNumber(row, tableRowNumberCellElement);
-            emptyCells.add(tableRowNumberCellElement);
-        }
+	protected void processWorkbook(XSSFWorkbook workbook) {
+		for (int s = 0; s < workbook.getNumberOfSheets(); s++) {
+			XSSFSheet sheet = workbook.getSheetAt(s);
+			processSheet(sheet);
+		}
+		htmlDocFacade.updateStylesheet();
+	}
 
-        int maxRenderedColumn = 0;
-        for(int colIx = 0; colIx < maxColIx; colIx++){
-            if(!isOutputHiddenColumns() && sheet.isColumnHidden(colIx)){
-            	continue;
-            }
-            CellRangeAddress range = ExcelToHtmlUtils.getMergedRange(mergedRanges, row.getRowNum(), colIx);
+	protected void processSheet(XSSFSheet sheet) {
+		processSheetHeader(htmlDocFacade.getBody(), sheet);
+		final int physicalNumOfRows = sheet.getPhysicalNumberOfRows();
+		if (physicalNumOfRows <= 0) {
+			return;
+		}
+		Element table = htmlDocFacade.createTable();
+		htmlDocFacade.addStyleClass(table, cssClassPrefixTable, "border-collapse:collapse;border-spacing:0;");
+		Element tableBody = htmlDocFacade.createTableBody();
+		final CellRangeAddress[][] mergedRanges = buildMergedRangesMap(sheet);
+		final List<Element> emptyRowElements = new ArrayList<Element>(physicalNumOfRows);
 
-            if(range != null && (range.getFirstColumn() != colIx || range.getFirstRow() != row.getRowNum())){
-            	 continue;
-            }
-               
-            XSSFCell cell = row.getCell( colIx );
+		int maxSheetColumns = 1;
+		for (int r = sheet.getFirstRowNum(); r <= sheet.getLastRowNum(); r++) {
+			XSSFRow row = sheet.getRow(r);
+			if (row == null) {
+				continue;
+			}
+			if (!isOutputHiddenRows() && row.getZeroHeight()) {
+				continue;
+			}
 
-            Element tableCellElement = htmlDocFacade.createTableCell();
+			Element tableRowElement = htmlDocFacade.createTableRow();
+			htmlDocFacade.addStyleClass(tableRowElement, cssClassPrefixRow,
+					"height:" + (row.getHeight() / 20f) + "pt;");
 
-            if(range != null){
-                if(range.getFirstColumn() != range.getLastColumn()){
-                	tableCellElement.setAttribute("colspan", String.valueOf(range.getLastColumn() - range.getFirstColumn() + 1));
-                }                  
-                if(range.getFirstRow() != range.getLastRow()){
-                	tableCellElement.setAttribute("rowspan", String.valueOf(range.getLastRow() - range.getFirstRow() + 1));
-                }                    
-            }
+			int maxRowColumnNumber = processRow(mergedRanges, row, tableRowElement);
 
-            boolean emptyCell;
-            if(cell != null){
-                emptyCell = processCell(cell, tableCellElement, getColumnWidth(sheet, colIx), 0, row.getHeight()/20f);
-            }else{
-                emptyCell = true;
-            }
+			if (maxRowColumnNumber == 0) {
+				emptyRowElements.add(tableRowElement);
+			} else {
+				if (!emptyRowElements.isEmpty()) {
+					for (Element emptyRowElement : emptyRowElements) {
+						tableBody.appendChild(emptyRowElement);
+					}
+					emptyRowElements.clear();
+				}
+				tableBody.appendChild(tableRowElement);
+			}
+			maxSheetColumns = Math.max(maxSheetColumns, maxRowColumnNumber);
+		}
 
-            if(emptyCell){
-                emptyCells.add(tableCellElement);
-            }else{
-                for(Element emptyCellElement: emptyCells){
-                    tableRowElement.appendChild(emptyCellElement);
-                }
-                emptyCells.clear();
+		processColumnWidths(sheet, maxSheetColumns, table);
+		if (isOutputColumnHeaders()) {
+			processColumnHeaders(sheet, maxSheetColumns, table);
+		}
 
-                tableRowElement.appendChild(tableCellElement);
-                maxRenderedColumn = colIx;
-            }
-        }
+		table.appendChild(tableBody);
 
-        return maxRenderedColumn + 1;
-    }
+		htmlDocFacade.getBody().appendChild(table);
+	}
 
-    protected boolean processCell(XSSFCell cell, Element tableCellElement, int normalWidthPx, int maxSpannedWidthPx, float normalHeightPt){
-        final XSSFCellStyle cellStyle = cell.getCellStyle();
-        String value;
-        
-        switch (cell.getCellTypeEnum()){
-        case STRING:
-            // XXX: enrich
-            value = cell.getRichStringCellValue().getString();
-            break;
-        case FORMULA:
-            switch (cell.getCachedFormulaResultTypeEnum()){
-            case STRING:
-                XSSFRichTextString str = cell.getRichStringCellValue();
-                if (str != null && str.length() > 0){
-                    value = ( str.toString() );
-                }else{
-                    value = "";
-                }
-                break;
-            case NUMERIC:
-                double nValue = cell.getNumericCellValue();
-                short df = cellStyle.getDataFormat();
-                String dfs = cellStyle.getDataFormatString();
-                value = hssfDataFormatter.formatRawCellContents(nValue, df, dfs);
-                break;
-            case BOOLEAN:
-                value = String.valueOf( cell.getBooleanCellValue() );
-                break;
-            case ERROR:
-                value = ErrorEval.getText( cell.getErrorCellValue() );
-                break;
-            default:
-            	System.out.println("Unexpected cell cachedFormulaResultType (" + cell.getCachedFormulaResultTypeEnum() + ")");
-                value = "";
-                break;
-            }
-            break;
-        case BLANK:
-            value = "";
-            break;
-        case NUMERIC:
-            value = hssfDataFormatter.formatCellValue( cell );
-            break;
-        case BOOLEAN:
-            value = String.valueOf( cell.getBooleanCellValue() );
-            break;
-        case ERROR:
-            value = ErrorEval.getText( cell.getErrorCellValue() );
-            break;
-        default:
-            System.out.println("Unexpected cell type (" + cell.getCellTypeEnum() + ")");
-            return true;
-        }
+	/**
+	 * @return maximum 1-base index of column that were rendered, zero if none
+	 */
+	protected int processRow(CellRangeAddress[][] mergedRanges, XSSFRow row, Element tableRowElement) {
+		final XSSFSheet sheet = row.getSheet();
+		final short maxColIx = row.getLastCellNum();
+		if (maxColIx <= 0) {
+			return 0;
+		}
 
-        final boolean noText = isEmpty(value);
+		final List<Element> emptyCells = new ArrayList<Element>(maxColIx);
 
-        if(cellStyle.getIndex() != 0){
-            XSSFWorkbook workbook = cell.getRow().getSheet().getWorkbook();
-            String mainCssClass = getStyleClassName(workbook, cellStyle);     
-            tableCellElement.setAttribute("class", mainCssClass);
+		if (isOutputRowNumbers()) {
+			Element tableRowNumberCellElement = htmlDocFacade.createTableHeaderCell();
+			processRowNumber(row, tableRowNumberCellElement);
+			emptyCells.add(tableRowNumberCellElement);
+		}
 
-            if (noText){
-                /*
-                 * if cell style is defined (like borders, etc.) but cell text
-                 * is empty, add "&nbsp;" to output, so browser won't collapse
-                 * and ignore cell
-                 */
-                value = "\u00A0";
-            }
-        }
+		int maxRenderedColumn = 0;
+		for (int colIx = 0; colIx < maxColIx; colIx++) {
+			if (!isOutputHiddenColumns() && sheet.isColumnHidden(colIx)) {
+				continue;
+			}
+			CellRangeAddress range = ExcelToHtmlUtils.getMergedRange(mergedRanges, row.getRowNum(), colIx);
 
-        if(isOutputLeadingSpacesAsNonBreaking() && value.startsWith(" ")){
-            StringBuilder builder = new StringBuilder();
-            for(int c = 0; c < value.length(); c++){
-                if(value.charAt(c)!= ' '){
-                	break;
-                }                  
-                builder.append('\u00a0');
-            }
+			if (range != null && (range.getFirstColumn() != colIx || range.getFirstRow() != row.getRowNum())) {
+				continue;
+			}
 
-            if(value.length() != builder.length()){
-            	builder.append(value.substring(builder.length()));
-            }
-               
-            value = builder.toString();
-        }
+			XSSFCell cell = row.getCell(colIx);
 
-        Text text = htmlDocFacade.createText(value);    
-        tableCellElement.appendChild(text);
-        
-        return isEmpty(value) && (cellStyle.getIndex() == 0);
-    }
+			Element tableCellElement = htmlDocFacade.createTableCell();
 
-    
-    protected void processSheetHeader(Element htmlBody, XSSFSheet sheet){
-        Element h2 = htmlDocFacade.createHeader2();
-        h2.appendChild(htmlDocFacade.createText(sheet.getSheetName()));
-        htmlBody.appendChild(h2);
-    }
-    
-    protected void processRowNumber(XSSFRow row, Element tableRowNumberCellElement){
-        tableRowNumberCellElement.setAttribute("class", "rownumber");
-        Text text = htmlDocFacade.createText(getRowName(row));
-        tableRowNumberCellElement.appendChild(text);
-    }
-    
-    protected void processColumnHeaders(XSSFSheet sheet, int maxSheetColumns, Element table){
-        Element tableHeader = htmlDocFacade.createTableHeader();
-        table.appendChild( tableHeader );
+			if (range != null) {
+				if (range.getFirstColumn() != range.getLastColumn()) {
+					tableCellElement.setAttribute("colspan",
+							String.valueOf(range.getLastColumn() - range.getFirstColumn() + 1));
+				}
+				if (range.getFirstRow() != range.getLastRow()) {
+					tableCellElement.setAttribute("rowspan",
+							String.valueOf(range.getLastRow() - range.getFirstRow() + 1));
+				}
+			}
 
-        Element tr = htmlDocFacade.createTableRow();
+			boolean emptyCell;
+			if (cell != null) {
+				emptyCell = processCell(cell, tableCellElement, getColumnWidth(sheet, colIx), 0, row.getHeight() / 20f);
+			} else {
+				emptyCell = true;
+			}
 
-        if (isOutputRowNumbers()){
-            // empty row at left-top corner
-            tr.appendChild(htmlDocFacade.createTableHeaderCell());
-        }
+			if (emptyCell) {
+				emptyCells.add(tableCellElement);
+			} else {
+				for (Element emptyCellElement : emptyCells) {
+					tableRowElement.appendChild(emptyCellElement);
+				}
+				emptyCells.clear();
 
-        for(int c = 0; c < maxSheetColumns; c++){
-            if(!isOutputHiddenColumns() && sheet.isColumnHidden(c)){
-            	continue;
-            }              
-            Element th = htmlDocFacade.createTableHeaderCell();
-            String text = getColumnName(c);
-            th.appendChild(htmlDocFacade.createText(text));
-            tr.appendChild(th);
-        }
-        tableHeader.appendChild(tr);
-    }
+				tableRowElement.appendChild(tableCellElement);
+				maxRenderedColumn = colIx;
+			}
+		}
 
-    /**
-     * Creates COLGROUP element with width specified for all columns. (Except
-     * first if <tt>{@link #isOutputRowNumbers()}==true</tt>)
-     */
-    protected void processColumnWidths(XSSFSheet sheet, int maxSheetColumns, Element table){
-        // draw COLS after we know max column number
-        Element columnGroup = htmlDocFacade.createTableColumnGroup();
-        if(isOutputRowNumbers()){
-            columnGroup.appendChild( htmlDocFacade.createTableColumn() );
-        }
-        for (int c = 0; c < maxSheetColumns; c++){
-            if(!isOutputHiddenColumns() && sheet.isColumnHidden(c)){
-            	continue;
-            }
-            Element col = htmlDocFacade.createTableColumn();
-            col.setAttribute("width", String.valueOf(getColumnWidth(sheet, c)));
-            columnGroup.appendChild(col);
-        }
-        table.appendChild(columnGroup);
-    }
+		return maxRenderedColumn + 1;
+	}
 
+	protected boolean processCell(XSSFCell cell, Element tableCellElement, int normalWidthPx, int maxSpannedWidthPx,
+			float normalHeightPt) {
+		final XSSFCellStyle cellStyle = cell.getCellStyle();
+		String value;
 
-    
-    /**
-     * Creates a map (i.e. two-dimensional array) filled with ranges. Allow fast
-     * retrieving {@link CellRangeAddress} of any cell, if cell is contained in
-     * range.
-     * 
-     * @see #getMergedRange(CellRangeAddress[][], int, int)
-     */
-    private static CellRangeAddress[][] buildMergedRangesMap(XSSFSheet sheet){
-        CellRangeAddress[][] mergedRanges = new CellRangeAddress[1][];
-        for (final CellRangeAddress cellRangeAddress : sheet.getMergedRegions()){
-            final int requiredHeight = cellRangeAddress.getLastRow() + 1;
-            if(mergedRanges.length < requiredHeight){
-                CellRangeAddress[][] newArray = new CellRangeAddress[requiredHeight][];
-                System.arraycopy(mergedRanges, 0, newArray, 0, mergedRanges.length);
-                mergedRanges = newArray;
-            }
-            for(int r = cellRangeAddress.getFirstRow(); r <= cellRangeAddress.getLastRow(); r++){
-                final int requiredWidth = cellRangeAddress.getLastColumn() + 1;
-                CellRangeAddress[] rowMerged = mergedRanges[r];
-                if(rowMerged == null){
-                    rowMerged = new CellRangeAddress[requiredWidth];
-                    mergedRanges[r] = rowMerged;
-                }else{
-                    final int rowMergedLength = rowMerged.length;
-                    if(rowMergedLength < requiredWidth){
-                        final CellRangeAddress[] newRow = new CellRangeAddress[requiredWidth];
-                        System.arraycopy(rowMerged, 0, newRow, 0, rowMergedLength);
-                        mergedRanges[r] = newRow;
-                        rowMerged = newRow;
-                    }
-                }
-                Arrays.fill(rowMerged, cellRangeAddress.getFirstColumn(), cellRangeAddress.getLastColumn() + 1, cellRangeAddress);
-            }
-        }
-        return mergedRanges;
-    }
-    
-    /**
-     * Generates name for output as column header in case
-     * <tt>{@link #isOutputColumnHeaders()} == true</tt>
-     * 
-     * @param columnIndex
-     *            0-based column index
-     */
-    protected String getColumnName(int columnIndex){
-        return NumberFormatter.getNumber( columnIndex + 1, 3 );
-    }
-    
-    /**
-     * Generates name for output as row number in case
-     * <tt>{@link #isOutputRowNumbers()} == true</tt>
-     */
-    protected String getRowName(XSSFRow row){
-        return String.valueOf( row.getRowNum() + 1 );
-    }
-    
-    private static int getColumnWidth(XSSFSheet sheet, int columnIndex){
-    	int widthUnits = sheet.getColumnWidth(columnIndex);
-        int pixels = (widthUnits/EXCEL_COLUMN_WIDTH_FACTOR)*UNIT_OFFSET_LENGTH;
+		switch (cell.getCellTypeEnum()) {
+			case STRING:
+				// XXX: enrich
+				value = cell.getRichStringCellValue().getString();
+				break;
+			case FORMULA:
+				switch (cell.getCachedFormulaResultTypeEnum()) {
+					case STRING:
+						XSSFRichTextString str = cell.getRichStringCellValue();
+						if (str != null && str.length() > 0) {
+							value = (str.toString());
+						} else {
+							value = "";
+						}
+						break;
+					case NUMERIC:
+						double nValue = cell.getNumericCellValue();
+						short df = cellStyle.getDataFormat();
+						String dfs = cellStyle.getDataFormatString();
+						value = hssfDataFormatter.formatRawCellContents(nValue, df, dfs);
+						break;
+					case BOOLEAN:
+						value = String.valueOf(cell.getBooleanCellValue());
+						break;
+					case ERROR:
+						value = ErrorEval.getText(cell.getErrorCellValue());
+						break;
+					default:
+						System.out.println(
+								"Unexpected cell cachedFormulaResultType (" + cell.getCachedFormulaResultTypeEnum() + ")");
+						value = "";
+						break;
+				}
+				break;
+			case BLANK:
+				value = "";
+				break;
+			case NUMERIC:
+				value = hssfDataFormatter.formatCellValue(cell);
+				break;
+			case BOOLEAN:
+				value = String.valueOf(cell.getBooleanCellValue());
+				break;
+			case ERROR:
+				value = ErrorEval.getText(cell.getErrorCellValue());
+				break;
+			default:
+				System.out.println("Unexpected cell type (" + cell.getCellTypeEnum() + ")");
+				return true;
+		}
 
-        int offsetWidthUnits = widthUnits%EXCEL_COLUMN_WIDTH_FACTOR;
-        pixels += Math.round(offsetWidthUnits/((float)EXCEL_COLUMN_WIDTH_FACTOR/UNIT_OFFSET_LENGTH));
+		final boolean noText = isEmpty(value);
 
-        return pixels;
-    }
+		if (cellStyle.getIndex() != 0) {
+			XSSFWorkbook workbook = cell.getRow().getSheet().getWorkbook();
+			String mainCssClass = getStyleClassName(workbook, cellStyle);
+			tableCellElement.setAttribute("class", mainCssClass);
 
-    protected static boolean isEmpty(String str){
-        return str == null || str.length() == 0;
-    }
+			if (noText) {
+				/*
+				 * if cell style is defined (like borders, etc.) but cell text
+				 * is empty, add "&nbsp;" to output, so browser won't collapse
+				 * and ignore cell
+				 */
+				value = "\u00A0";
+			}
+		}
+
+		if (isOutputLeadingSpacesAsNonBreaking() && value.startsWith(" ")) {
+			StringBuilder builder = new StringBuilder();
+			for (int c = 0; c < value.length(); c++) {
+				if (value.charAt(c) != ' ') {
+					break;
+				}
+				builder.append('\u00a0');
+			}
+
+			if (value.length() != builder.length()) {
+				builder.append(value.substring(builder.length()));
+			}
+
+			value = builder.toString();
+		}
+
+		Text text = htmlDocFacade.createText(value);
+		tableCellElement.appendChild(text);
+
+		return isEmpty(value) && (cellStyle.getIndex() == 0);
+	}
+
+	protected void processSheetHeader(Element htmlBody, XSSFSheet sheet) {
+		Element h2 = htmlDocFacade.createHeader2();
+		h2.appendChild(htmlDocFacade.createText(sheet.getSheetName()));
+		htmlBody.appendChild(h2);
+	}
+
+	protected void processRowNumber(XSSFRow row, Element tableRowNumberCellElement) {
+		tableRowNumberCellElement.setAttribute("class", "rownumber");
+		Text text = htmlDocFacade.createText(getRowName(row));
+		tableRowNumberCellElement.appendChild(text);
+	}
+
+	protected void processColumnHeaders(XSSFSheet sheet, int maxSheetColumns, Element table) {
+		Element tableHeader = htmlDocFacade.createTableHeader();
+		table.appendChild(tableHeader);
+
+		Element tr = htmlDocFacade.createTableRow();
+
+		if (isOutputRowNumbers()) {
+			// empty row at left-top corner
+			tr.appendChild(htmlDocFacade.createTableHeaderCell());
+		}
+
+		for (int c = 0; c < maxSheetColumns; c++) {
+			if (!isOutputHiddenColumns() && sheet.isColumnHidden(c)) {
+				continue;
+			}
+			Element th = htmlDocFacade.createTableHeaderCell();
+			String text = getColumnName(c);
+			th.appendChild(htmlDocFacade.createText(text));
+			tr.appendChild(th);
+		}
+		tableHeader.appendChild(tr);
+	}
+
+	/**
+	 * Creates COLGROUP element with width specified for all columns. (Except
+	 * first if <tt>{@link #isOutputRowNumbers()}==true</tt>)
+	 */
+	protected void processColumnWidths(XSSFSheet sheet, int maxSheetColumns, Element table) {
+		// draw COLS after we know max column number
+		Element columnGroup = htmlDocFacade.createTableColumnGroup();
+		if (isOutputRowNumbers()) {
+			columnGroup.appendChild(htmlDocFacade.createTableColumn());
+		}
+		for (int c = 0; c < maxSheetColumns; c++) {
+			if (!isOutputHiddenColumns() && sheet.isColumnHidden(c)) {
+				continue;
+			}
+			Element col = htmlDocFacade.createTableColumn();
+			col.setAttribute("width", String.valueOf(getColumnWidth(sheet, c)));
+			columnGroup.appendChild(col);
+		}
+		table.appendChild(columnGroup);
+	}
+
+	/**
+	 * Creates a map (i.e. two-dimensional array) filled with ranges. Allow fast
+	 * retrieving {@link CellRangeAddress} of any cell, if cell is contained in
+	 * range.
+	 * 
+	 * @see #getMergedRange(CellRangeAddress[][], int, int)
+	 */
+	private static CellRangeAddress[][] buildMergedRangesMap(XSSFSheet sheet) {
+		CellRangeAddress[][] mergedRanges = new CellRangeAddress[1][];
+		for (final CellRangeAddress cellRangeAddress : sheet.getMergedRegions()) {
+			final int requiredHeight = cellRangeAddress.getLastRow() + 1;
+			if (mergedRanges.length < requiredHeight) {
+				CellRangeAddress[][] newArray = new CellRangeAddress[requiredHeight][];
+				System.arraycopy(mergedRanges, 0, newArray, 0, mergedRanges.length);
+				mergedRanges = newArray;
+			}
+			for (int r = cellRangeAddress.getFirstRow(); r <= cellRangeAddress.getLastRow(); r++) {
+				final int requiredWidth = cellRangeAddress.getLastColumn() + 1;
+				CellRangeAddress[] rowMerged = mergedRanges[r];
+				if (rowMerged == null) {
+					rowMerged = new CellRangeAddress[requiredWidth];
+					mergedRanges[r] = rowMerged;
+				} else {
+					final int rowMergedLength = rowMerged.length;
+					if (rowMergedLength < requiredWidth) {
+						final CellRangeAddress[] newRow = new CellRangeAddress[requiredWidth];
+						System.arraycopy(rowMerged, 0, newRow, 0, rowMergedLength);
+						mergedRanges[r] = newRow;
+						rowMerged = newRow;
+					}
+				}
+				Arrays.fill(rowMerged, cellRangeAddress.getFirstColumn(), cellRangeAddress.getLastColumn() + 1,
+						cellRangeAddress);
+			}
+		}
+		return mergedRanges;
+	}
+
+	/**
+	 * Generates name for output as column header in case
+	 * <tt>{@link #isOutputColumnHeaders()} == true</tt>
+	 * 
+	 * @param columnIndex
+	 *            0-based column index
+	 */
+	protected String getColumnName(int columnIndex) {
+		return NumberFormatter.getNumber(columnIndex + 1, 3);
+	}
+
+	/**
+	 * Generates name for output as row number in case
+	 * <tt>{@link #isOutputRowNumbers()} == true</tt>
+	 */
+	protected String getRowName(XSSFRow row) {
+		return String.valueOf(row.getRowNum() + 1);
+	}
+
+	private static int getColumnWidth(XSSFSheet sheet, int columnIndex) {
+		int widthUnits = sheet.getColumnWidth(columnIndex);
+		int pixels = (widthUnits / EXCEL_COLUMN_WIDTH_FACTOR) * UNIT_OFFSET_LENGTH;
+
+		int offsetWidthUnits = widthUnits % EXCEL_COLUMN_WIDTH_FACTOR;
+		pixels += Math.round(offsetWidthUnits / ((float) EXCEL_COLUMN_WIDTH_FACTOR / UNIT_OFFSET_LENGTH));
+
+		return pixels;
+	}
+
+	protected static boolean isEmpty(String str) {
+		return str == null || str.length() == 0;
+	}
 
 }
