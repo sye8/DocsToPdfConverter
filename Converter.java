@@ -98,13 +98,8 @@ public class Converter {
 		
 		//TODO: Support Chinese font
 		//Set up font mapper
-		String os = System.getProperty("os.name");
 		String regex;
-		if(os.toLowerCase().startsWith("windows")){
-			regex =".*(calibri|camb|cour|arial|times|comic|georgia|impact|LSANS|pala|tahoma|trebuc|verdana|symbol|webdings|wingding).*";
-		}else{
-			regex =".*(Courier New|Arial|Times New Roman|Comic Sans|Georgia|Impact|Lucida Console|Lucida Sans Unicode|Palatino Linotype|Tahoma|Trebuchet|Verdana|Symbol|Webdings|Wingdings|MS Sans Serif|MS Serif|).*";
-		}	
+		regex =".*(Courier New|Arial|Times New Roman|Comic Sans|Georgia|Impact|Lucida Console|Lucida Sans Unicode|Palatino Linotype|Tahoma|Trebuchet|Verdana|Symbol|Webdings|Wingdings|MS Sans Serif|MS Serif|).*";
 		PhysicalFonts.setRegex(regex);
 	    Mapper fontMapper = new IdentityPlusMapper();
 	    wordMLPackage.setFontMapper(fontMapper);
