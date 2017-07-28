@@ -10,7 +10,8 @@ Note for xls and xlsx to pdf conversion, any charts included in the spreadsheet 
 
 ## Known problems
 
-- Cannot render Chinese characters not in [Arial, Times New Roman, Helvetica, Calibri, 等线, 宋体] 
+- Cannot render Chinese characters not in [Arial, Times New Roman, Helvetica, Calibri, 等线, 宋体] in docs
+- Cannot render Chinese characters in HTML to pdf conversion
 - High resolution images in slideshow will not be rendered
 - Background image in slideshow may not be properly rendered
 
