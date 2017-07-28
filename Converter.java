@@ -15,13 +15,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import org.apache.poi.hssf.converter.ExcelToHtmlConverter;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
@@ -123,6 +117,7 @@ public class Converter {
 	        fontMapper.put("Calibri", font);
 	        fontMapper.put("Helvetica", font);
 	        fontMapper.put("等线", font);
+	        fontMapper.put("宋体", font);
 	        if(mainFontUsed != null){
 	        	fontMapper.put(mainFontUsed, font);
 	        }
