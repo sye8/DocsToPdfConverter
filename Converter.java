@@ -14,9 +14,14 @@ import java.util.Iterator;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.poi.hssf.converter.ExcelToHtmlConverter;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
@@ -32,11 +37,11 @@ import org.docx4j.model.fields.FieldUpdater;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.w3c.dom.Document;
 import org.xhtmlrenderer.pdf.ITextRenderer;
-import org.xml.sax.SAXException;
 
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Image;
 import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
@@ -89,21 +94,40 @@ public class Converter {
 	 *            The output file path. If path format is not pdf, will be
 	 *            changed to pdf. Put null to generate pdf file in the same
 	 *            directory with the same name
+	 * @param mainFontUsed
+	 * 			  The main font used in the document. Required for font mapping. 
+	 * 			  Note: Font mapping for Arial, Times New Roman, Calibri, Helvetica, 等线 is included
 	 * @throws Exception 
 	 */
-	public static void docxToPDF(String inPath, String outPath) throws Exception {
+	public static void docxToPDF(String inPath, String outPath, String mainFontUsed) throws Exception {
 		WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(inPath));
 		
 		//TODO: Support Chinese font
 		//Set up font mapper
+		String os = System.getProperty("os.name");
+		String regex;
+		if(os.toLowerCase().startsWith("windows")){
+			regex =".*(calibri|camb|cour|arial|times|comic|georgia|impact|LSANS|pala|tahoma|trebuc|verdana|symbol|webdings|wingding).*";
+		}else{
+			regex =".*(Courier New|Arial|Times New Roman|Comic Sans|Georgia|Impact|Lucida Console|Lucida Sans Unicode|Palatino Linotype|Tahoma|Trebuchet|Verdana|Symbol|Webdings|Wingdings|MS Sans Serif|MS Serif|).*";
+		}	
+		PhysicalFonts.setRegex(regex);
 	    Mapper fontMapper = new IdentityPlusMapper();
 	    wordMLPackage.setFontMapper(fontMapper);
-	    PhysicalFont font = PhysicalFonts.get("Songti"); 
+	    PhysicalFonts.discoverPhysicalFonts();
+	    PhysicalFont font = PhysicalFonts.get("Arial Unicode MS");
 	    System.out.println(font);
 	    if (font!=null) {
-	        fontMapper.put("Times New Roman", font);
+	    	fontMapper.put("Times New Roman", font);
 	        fontMapper.put("Arial", font);
+	        fontMapper.put("Calibri", font);
+	        fontMapper.put("Helvetica", font);
+	        fontMapper.put("等线", font);
+	        if(mainFontUsed != null){
+	        	fontMapper.put(mainFontUsed, font);
+	        }
 	    }
+	    fontMapper.put("Libian SC Regular", PhysicalFonts.get("SimSun"));
 	   
 		// Refresh the values of DOCPROPERTY fields
 		FieldUpdater updater = new FieldUpdater(wordMLPackage);
@@ -170,10 +194,12 @@ public class Converter {
 	 * @throws IOException
 	 * @throws DocumentException
 	 * @throws ParserConfigurationException
+	 * @throws TransformerException 
 	 */
-	public static void xlsxToPDF(String inPath, String outPath, boolean outputColumnHeader, boolean outputRowNumber) throws IOException, DocumentException, ParserConfigurationException {
+	public static void xlsxToPDF(String inPath, String outPath, boolean outputColumnHeader, boolean outputRowNumber) throws IOException, DocumentException, ParserConfigurationException, TransformerException {
 		//Load file
 		FileInputStream fis = new FileInputStream(new File(inPath));
+		
 		// Convert input file into HTML
 		Document inHTML = XLSXToHTMLConverter.convert(new XSSFWorkbook(fis), outputColumnHeader, outputRowNumber);
 		
@@ -181,6 +207,13 @@ public class Converter {
 		
 		// Validate outPath
 		outPath = pathValidator(inPath, outPath);
+		
+		//TODO: HTML output for font debugging
+//		TransformerFactory tranFactory = TransformerFactory.newInstance();
+//		Transformer aTransformer = tranFactory.newTransformer();
+//		Source src = new DOMSource(inHTML);
+//		Result dest = new StreamResult(new File(outPath + ".html"));
+//		aTransformer.transform(src, dest);
 
 		// Convert to PDF
 		htmlToPDF(inHTML, outPath);
@@ -220,8 +253,7 @@ public class Converter {
 		//Convert each slide into image
 		int i = 0;
 		for(XSLFSlide slide : inPPT.getSlides()){
-
-		    
+			
 			BufferedImage slideImg = new BufferedImage(pgsize.width, pgsize.height, BufferedImage.TYPE_INT_RGB);
 			
 			//G2D setup
@@ -257,50 +289,7 @@ public class Converter {
 		document.add(table);
 		inPPT.close();
 	    document.close();
-	}
-
-	/**
-	 * Converts HTML file to PDF
-	 * 
-	 * @param inPath
-	 *            The input file path
-	 * @param outPath
-	 *            The output file path. If path format is not pdf, will be
-	 *            changed to pdf. Put null to generate pdf file in the same
-	 *            directory with the same name
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws ParserConfigurationException
-	 * @throws DocumentException
-	 */
-	public static void htmlToPDF(String inPath, String outPath)
-			throws ParserConfigurationException, SAXException, IOException, DocumentException {
-		Document inHTML = loadFromFile(inPath);
-
-		// Validate outPath
-		outPath = pathValidator(inPath, outPath);
-
-		// Convert to PDF
-		htmlToPDF(inHTML, outPath);
-	}
-
-	/**
-	 * Private method to load a w3c dom document from an input path
-	 * 
-	 * @param inPath
-	 *            Input file path
-	 * @throws ParserConfigurationException
-	 * @throws IOException
-	 * @throws SAXException
-	 */
-	private static Document loadFromFile(String inPath) throws ParserConfigurationException, SAXException, IOException {
-		DocumentBuilderFactory factory = null;
-		DocumentBuilder builder = null;
-
-		factory = DocumentBuilderFactory.newInstance();
-		builder = factory.newDocumentBuilder();
-
-		return builder.parse(new File(inPath));
+	    System.out.println("Saved: " + outPath);
 	}
 
 	/**
@@ -316,18 +305,22 @@ public class Converter {
 	private static void htmlToPDF(Document in, String outPath) throws DocumentException, IOException {
 		ITextRenderer renderer = new ITextRenderer();
 		renderer.setDocument(in, null);
-
 		renderer.layout();
+		
+		//Set font
+		renderer.getFontResolver().addFont("fonts/ARIALUNI.TTF", BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED);
 
+		//Output
 		OutputStream os = new FileOutputStream(outPath);
-
 		renderer.createPDF(os);
+		
 		System.out.println("Saved: " + outPath);
 
 		// Cleanup
 		os.flush();
 		os.close();
-		renderer = null;
+		renderer = null;	
+
 	}
 
 	/**
@@ -344,9 +337,9 @@ public class Converter {
 			return inPath.substring(0, inPath.indexOf('.')) + ".pdf";
 		} else if (!outPath.contains(".")) {
 			return outPath += ".pdf";
-		} else if (!outPath.substring(outPath.indexOf('.') + 1).equals("pdf")) {																			
+		} else if (!outPath.endsWith("pdf")) {																			
 			return outPath.substring(0, outPath.indexOf('.')) + ".pdf";
-		} else if (outPath.substring(outPath.indexOf('.') + 1).equals("pdf")) {
+		} else if (outPath.endsWith("pdf")) {
 			return outPath;
 		} else {
 			return inPath.substring(0, inPath.indexOf('.')) + ".pdf";
