@@ -2,11 +2,17 @@
 
 [![License](https://img.shields.io/badge/license-MIT%20License-blue.svg)](LICENSE)
 
-Converts docx, xls, xlsx, html into PDF
+Converts docx, xls, xlsx, pptx, html into PDF
 
 For docx conversion, [docx4j-export-FO](https://github.com/plutext/docx4j-export-FO) is needed
 
 Note for xls and xlsx to pdf conversion, any charts included in the spreadsheet will not showup in pdf (So far not supported). Suggestions are welcomed
+
+## Known problems
+
+- Cannot render Chinese characters
+- High resolution images in slideshow will not be rendered
+- Background image in slideshow may not be properly rendered
 
 ## Dependencies 
 
